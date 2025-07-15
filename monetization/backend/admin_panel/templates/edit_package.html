@@ -1,0 +1,53 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}Edit Minute Package{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Minute Package: {{ package.name }}</h2>
+    <hr>
+    <form method="post">
+        {% csrf_token %} {# Для Django. Если Flask с WTForms, то form.hidden_tag() #}
+        
+        <div class="mb-3">
+            <label for="name" class="form-label">Package Name</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ form.instance.name|default:package.name }}" required>
+            {% if form.errors.name %}<div class="invalid-feedback d-block">{{ form.errors.name|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="minutes" class="form-label">Minutes</label>
+            <input type="number" class="form-control" id="minutes" name="minutes" value="{{ form.instance.minutes|default:package.minutes }}" required>
+            {% if form.errors.minutes %}<div class="invalid-feedback d-block">{{ form.errors.minutes|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="price" class="form-label">Price</label>
+            <input type="text" class="form-control" id="price" name="price" value="{{ form.instance.price|default:package.price }}" required>
+            {% if form.errors.price %}<div class="invalid-feedback d-block">{{ form.errors.price|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3">{{ form.instance.description|default:package.description }}</textarea>
+        </div>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if form.instance.is_active|default:package.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">
+                Active
+            </label>
+        </div>
+        
+        {% if form.errors.general %}
+            <div class="alert alert-danger" role="alert">
+                {{ form.errors.general|join:", " }}
+            </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'admin_manage_packages' %}" class="btn btn-secondary">Cancel</a> {# Предполагаемое имя URL для Django #}
+        {# Для Flask: <a href="{{ url_for('admin_panel.manage_minute_packages') }}" class="btn btn-secondary">Cancel</a> #}
+    </form>
+</div>
+{% endblock %}

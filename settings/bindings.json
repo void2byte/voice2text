@@ -1,0 +1,33 @@
+[
+    {
+        "app_name": "tray_app.py - voise2text - Trae",
+        "x": 1573,
+        "y": 944,
+        "pos_x": 1592,
+        "pos_y": 872,
+        "_enhanced_binding": {
+            "id": "e8ee3e85-e88e-4c90-ba2b-d9f687125242",
+            "window_identifier": {
+                "title": "Chrome Legacy Window",
+                "executable_path": "C:\\Users\\abvgd\\AppData\\Local\\Programs\\Trae\\Trae.exe",
+                "executable_name": "Trae.exe",
+                "window_class": "Chrome_RenderWidgetHostHWND",
+                "identification_methods": [
+                    "executable_name"
+                ],
+                "case_sensitive": false,
+                "use_regex": false
+            },
+            "x": 1573,
+            "y": 944,
+            "pos_x": 0,
+            "pos_y": 0,
+            "enabled": true,
+            "description": null,
+            "hotkey": null,
+            "created_at": "2025-07-15T08:44:53.668714",
+            "updated_at": "2025-07-15T08:44:53.668714"
+        },
+        "id": "e8ee3e85-e88e-4c90-ba2b-d9f687125242"
+    }
+]

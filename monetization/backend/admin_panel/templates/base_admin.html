@@ -1,0 +1,31 @@
+<!-- base_admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <!-- Link to CSS styles for admin panel -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_styles.css') }}"> 
+</head>
+<body>
+    <header>
+        <h1>Screph Admin Panel</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('admin_panel.manage_users_route') }}">Manage Users</a></li>
+                <li><a href="{{ url_for('admin_panel.manage_packages_route') }}">Manage Minute Packages</a></li>
+                <li><a href="{{ url_for('admin_panel.view_stats_route') }}">View Statistics</a></li>
+                <!-- Add other navigation links as needed -->
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        <!-- Content for specific admin pages will go here -->
+        {% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2024 Screph Monetization</p>
+    </footer>
+</body>
+</html>

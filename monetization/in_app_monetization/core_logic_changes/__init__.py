@@ -1,0 +1,1 @@
+# This directory is intended for modules that modify the core logic of Screph for monetization.

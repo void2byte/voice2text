@@ -1,0 +1,10 @@
+<!-- toggle_tools_panel -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+     stroke="#777" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- sidebar icon -->
+  <rect x="3" y="3" width="18" height="18" rx="2"/>
+  <line x1="8" y1="3" x2="8" y2="21"/>
+  <circle cx="6" cy="8" r="1" fill="#777"/>
+  <circle cx="6" cy="12" r="1" fill="#777"/>
+  <circle cx="6" cy="16" r="1" fill="#777"/>
+</svg>

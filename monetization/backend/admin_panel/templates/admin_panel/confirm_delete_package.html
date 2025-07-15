@@ -1,0 +1,27 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}
+Confirm Delete Package - Admin Panel
+{% endblock %}
+
+{% block admin_content %}
+<div class="container mt-4">
+    <h2>Confirm Deletion</h2>
+    <hr>
+    <p>Are you sure you want to delete the package "<strong>{{ package.name }}</strong>"?</p>
+    
+    <p>
+        <strong>Minutes:</strong> {{ package.minutes }}<br>
+        <strong>Price:</strong> ${{ package.price|floatformat:2 }}<br>
+        <strong>Description:</strong> {{ package.description|default:"N/A" }}
+    </p>
+
+    <form method="post" action="{% url 'admin_panel:delete_package' package_id=package.id %}"> {# Django URL #}
+    {# Для Flask: <form method="post" action="{{ url_for('admin_panel.delete_package_route', package_id=package.id) }}"> #}
+        {% csrf_token %} {# Для Django. Если Flask-WTF, то form.hidden_tag() или ничего, если CSRF обрабатывается иначе #}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'admin_panel:manage_packages' %}" class="btn btn-secondary">Cancel</a> {# Django URL #}
+        {# Для Flask: <a href="{{ url_for('admin_panel.manage_packages_route') }}" class="btn btn-secondary">Cancel</a> #}
+    </form>
+</div>
+{% endblock %}

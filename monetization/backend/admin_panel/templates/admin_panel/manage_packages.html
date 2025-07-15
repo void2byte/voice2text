@@ -1,0 +1,49 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Manage Minute Packages{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Minute Packages</h2>
+    <a href="{% url 'add_package' %}" class="btn btn-primary mb-3">Add New Package</a>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if packages %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Minutes</th>
+                <th scope="col">Price</th>
+                <th scope="col">Description</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for package in packages %}
+            <tr>
+                <td>{{ package.name }}</td>
+                <td>{{ package.minutes }}</td>
+                <td>${{ package.price }}</td>
+                <td>{{ package.description|truncatewords:10 }}</td>
+                <td>
+                    <a href="{% url 'edit_package' package.id %}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'delete_package' package.id %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No minute packages found. <a href="{% url 'add_package' %}">Add one now!</a></p>
+    {% endif %}
+</div>
+{% endblock %}

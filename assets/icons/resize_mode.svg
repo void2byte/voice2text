@@ -1,0 +1,8 @@
+<!-- resize_mode -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+     stroke="#777" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- square + outward arrows -->
+  <rect x="7" y="7" width="10" height="10"/>
+  <polyline points="7 13 7 17 11 17"/>
+  <polyline points="17 11 17 7 13 7"/>
+</svg>

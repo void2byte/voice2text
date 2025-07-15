@@ -1,0 +1,1 @@
+# This directory is intended for modules handling offline scenarios and API communication errors.

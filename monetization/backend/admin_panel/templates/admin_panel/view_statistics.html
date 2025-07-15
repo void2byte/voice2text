@@ -1,0 +1,48 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}View Statistics{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Platform Statistics</h2>
+
+    {% if statistics %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Total Users</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ statistics.total_users }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Total Packages Sold</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ statistics.total_packages_sold }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-header">Total Revenue</div>
+                <div class="card-body">
+                    <h5 class="card-title">${{ statistics.total_revenue|floatformat:2 }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <p>Statistics are not available at the moment.</p>
+    {% endif %}
+
+    <h3 class="mt-5">Recent Activity (Placeholder)</h3>
+    <ul class="list-group">
+        <li class="list-group-item">User 'john_doe' purchased 'Basic Package'.</li>
+        <li class="list-group-item">User 'jane_smith' signed up.</li>
+        <li class="list-group-item">'Premium Package' was updated.</li>
+    </ul>
+
+</div>
+{% endblock %}

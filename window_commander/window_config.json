@@ -1,0 +1,12 @@
+{
+    "hwnd": 263198,
+    "title": "Chrome Legacy Window",
+    "class_name": "Chrome_RenderWidgetHostHWND",
+    "rect": [
+        0,
+        0,
+        1920,
+        1050
+    ],
+    "pid": 1532
+}

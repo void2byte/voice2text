@@ -1,0 +1,35 @@
+1: Language
+2: Interface language:
+3: Operating mode
+4: Mode after recognition:
+5: Normal mode
+6: Copy and hide
+7: Copy, clear and hide
+8: Speech recognition settings
+9: Close
+10: Recognizer type
+11: Yandex SpeechKit
+12: Local (Vosk)
+13: Google Cloud Speech-to-Text
+14: Apply and save settings
+15: Error
+16: Settings widget not found for {}
+17: Settings widget for {} does not implement the required methods.
+18: Unknown recognizer type: {}
+19: Success
+20: Settings have been successfully applied and saved.
+21: Error applying settings
+22: Failed to apply settings for {}:\n{}
+23: General
+24: Close
+25: Annotation ready: '{}...' ({} characters), mode: {}
+26: Reloading speech recognizer...
+27: Opening speech recognition settings window...
+28: Settings window closed, reloading recognizer...
+29: Invalid API key (401)
+30: Check key
+31: Not checked
+32: Key status:
+33: Checking Yandex key
+34: API key not entered.
+35: Checking...

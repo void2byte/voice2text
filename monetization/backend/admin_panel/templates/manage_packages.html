@@ -1,0 +1,111 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}Manage Minute Packages{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Minute Packages</h2>
+    <hr>
+
+    <!-- Section for adding a new package -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Add New Package
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'admin_manage_packages' %}"> {# Убедитесь, что action правильный, или используйте url_for для Flask #}
+                {% csrf_token %} {# Для Django. Если Flask с WTForms, то form.hidden_tag() #}
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label">Package Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ form.data.name|default:'' }}" required>
+                    {% if form.errors.name %}<div class="invalid-feedback d-block">{{ form.errors.name|join:", " }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="minutes" class="form-label">Minutes</label>
+                    <input type="number" class="form-control" id="minutes" name="minutes" value="{{ form.data.minutes|default:'' }}" required>
+                    {% if form.errors.minutes %}<div class="invalid-feedback d-block">{{ form.errors.minutes|join:", " }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="price" class="form-label">Price</label>
+                    <input type="text" class="form-control" id="price" name="price" value="{{ form.data.price|default:'' }}" placeholder="e.g., 9.99" required>
+                    {% if form.errors.price %}<div class="invalid-feedback d-block">{{ form.errors.price|join:", " }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ form.data.description|default:'' }}</textarea>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                    <label class="form-check-label" for="is_active">
+                        Active
+                    </label>
+                </div>
+                
+                {% if form.errors.general %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ form.errors.general|join:", " }}
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Add Package</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section for listing existing packages -->
+    <div class="card">
+        <div class="card-header">
+            Existing Packages
+        </div>
+        <div class="card-body">
+            {% if packages %}
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Minutes</th>
+                        <th>Price</th>
+                        <th>Description</th>
+                        <th>Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for package in packages %}
+                    <tr>
+                        <td>{{ package.id }}</td>
+                        <td>{{ package.name }}</td>
+                        <td>{{ package.minutes }}</td>
+                        <td>${{ "%.2f"|format(package.price) }}</td> {# Используйте фильтр format для корректного отображения цены #}
+                        <td>{{ package.description|default:"N/A" }}</td>
+                        <td>
+                            {% if package.is_active %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_edit_package' package.id %}" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="{% url 'admin_delete_package' package.id %}" class="btn btn-sm btn-danger">Delete</a>
+                            {# Для Flask:
+                            <a href="{{ url_for('admin_panel.edit_minute_package', package_id=package.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="{{ url_for('admin_panel.delete_minute_package', package_id=package.id) }}" class="btn btn-sm btn-danger">Delete</a> #}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No minute packages found. Add one using the form above.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{
+    "widget": {
+        "default_width": 100,
+        "default_height": 30,
+        "default_pos_x": 50,
+        "default_pos_y": 50,
+        "min_size": [
+            50,
+            30
+        ],
+        "max_size": [
+            200,
+            100
+        ],
+        "opacity": 0.8,
+        "always_on_top": true
+    },
+    "validation": {
+        "min_app_name_length": 1,
+        "max_app_name_length": 100,
+        "max_coordinate_value": 10000,
+        "max_position_offset": 5000,
+        "validate_window_existence": true,
+        "validate_screen_bounds": true
+    },
+    "storage": {
+        "bindings_file": "settings/bindings.json",
+        "backup_enabled": true,
+        "backup_count": 5,
+        "auto_save": true,
+        "save_on_change": true
+    },
+    "ui": {
+        "show_success_messages": true,
+        "show_error_dialogs": true,
+        "show_warning_dialogs": true,
+        "dialog_timeout": 5000,
+        "auto_close_dialogs": false
+    },
+    "dialog": {
+        "last_identification_method": "executable_name",
+        "show_all_windows": true,
+        "case_sensitive": false,
+        "use_regex": false,
+        "remember_settings": true,
+        "detection_mode": 0
+    },
+    "logging": {
+        "log_level": "INFO",
+        "log_to_file": true,
+        "log_file": "logs/window_binder.log",
+        "max_log_size": 10485760,
+        "backup_count": 3,
+        "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    },
+    "performance": {
+        "window_search_timeout": 2.0,
+        "widget_update_interval": 100,
+        "batch_operations": true,
+        "lazy_loading": true
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "char_delay": 7,
+    "text_method": 0,
+    "restore_clipboard": true,
+    "default_delay": 3,
+    "clear_after_send": true,
+    "show_warnings": true,
+    "click_duration": 100
+}

@@ -1,0 +1,18 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}Confirm Delete Package{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Confirm Deletion</h2>
+    <hr>
+    <p>Are you sure you want to delete the package "<strong>{{ package.name }}</strong>"?</p>
+    
+    <form method="post">
+        {% csrf_token %} {# Для Django #}
+        <button type="submit" class="btn btn-danger">Yes, delete</button>
+        <a href="{% url 'admin_manage_packages' %}" class="btn btn-secondary">Cancel</a> {# Предполагаемое имя URL для Django #}
+        {# Для Flask: <a href="{{ url_for('admin_panel.manage_minute_packages') }}" class="btn btn-secondary">Cancel</a> #}
+    </form>
+</div>
+{% endblock %}

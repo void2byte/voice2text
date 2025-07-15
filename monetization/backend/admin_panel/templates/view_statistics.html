@@ -1,0 +1,78 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}View Statistics{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>View Statistics and Logs</h2>
+    <hr>
+
+    <!-- Sales Overview Section -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3 shadow-sm">
+                <div class="card-header">Total Sales</div>
+                <div class="card-body">
+                    <h4 class="card-title mb-0">${{ "%.2f"|format(total_sales|default(0)) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3 shadow-sm">
+                <div class="card-header">Active Users</div>
+                <div class="card-body">
+                    <h4 class="card-title mb-0">{{ active_users|default(0) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3 shadow-sm">
+                <div class="card-header">Total Packages Available</div>
+                <div class="card-body">
+                    <h4 class="card-title mb-0">{{ total_packages|default(0) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Section -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            Recent Transactions
+        </div>
+        <div class="card-body">
+            {% if transactions %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>User</th>
+                            <th>Package</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>{{ tx.id }}</td>
+                            <td>{{ tx.user }}</td>
+                            <td>{{ tx.package }}</td>
+                            <td>${{ "%.2f"|format(tx.amount) }}</td>
+                            <td>{{ tx.date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No recent transactions to display.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    {# Сюда можно добавить раздел для системных логов или другой статистики, если потребуется #}
+
+</div>
+{% endblock %}

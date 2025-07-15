@@ -1,0 +1,57 @@
+{
+    "hotkeys": {
+        "start_selection": "Ctrl+Alt+S",
+        "minimize_dialog": "S",
+        "voice_annotation": "V"
+    },
+    "selection": {
+        "min_width": 10,
+        "min_height": 10,
+        "darkening_factor": 0.5
+    },
+    "magnifier": {
+        "enabled": true,
+        "zoom_factor": 2.0,
+        "size": 200,
+        "grid_enabled": true
+    },
+    "voice_annotation": {
+        "max_duration": 60,
+        "auto_recognition": true,
+        "audio_quality": "medium"
+    },
+    "notifications": {
+        "show_on_startup": true,
+        "show_on_capture": true,
+        "show_on_save": true,
+        "sound_enabled": true
+    },
+    "files": {
+        "add_timestamp": true,
+        "timestamp_format": "%Y%m%d_%H%M%S",
+        "image_format": "png",
+        "jpg_quality": 90,
+        "create_subdirs_by_date": false
+    },
+    "ui": {
+        "highlight_color": "#FF0000",
+        "selection_border_width": 2,
+        "auto_save_path": "",
+        "remember_last_save_location": true
+    },
+    "serial_capture": {
+        "fps": 10,
+        "buffer_size": 100,
+        "auto_save": false,
+        "output_directory": "captures"
+    },
+    "capture": {
+        "last_window_hwnd": null,
+        "last_window_title": "Весь экран"
+    },
+    "language": "ru_RU",
+    "main": {
+        "language": "ru_RU",
+        "recognition_mode": 2
+    }
+}
