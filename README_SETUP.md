@@ -60,7 +60,7 @@ python run_tray_app.py
 ## Структура проекта
 
 ```
-voise2text/
+voice2text/
 ├── venv/                          # Виртуальное окружение (скопированное)
 ├── voice_control/                 # Основной модуль
 │   ├── speech_recognition/        # Модули распознавания речи

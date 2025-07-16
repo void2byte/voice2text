@@ -3,6 +3,9 @@
 Основной файл для запуска виджета голосовой аннотации.
 """
 
+with open('startup_test.log', 'w') as f:
+    f.write('main.py execution started')
+
 import logging
 import sys
 from PySide6.QtWidgets import QApplication

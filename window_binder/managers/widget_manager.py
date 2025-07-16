@@ -73,7 +73,9 @@ class WidgetManager(QObject):
         
         # Создаем виджет
         self.logger.debug(f"WidgetManager: [WIDGET_CREATE] Creating BinderWidget instance for binding {binding_id}")
-        widget = BinderWidget(binding_id)
+        # pygetwindow предоставляет HWND через атрибут _hWnd
+        window_handle = win._hWnd
+        widget = BinderWidget(binding_id, window_handle)
         
         # Устанавливаем значения по умолчанию для позиции, если они равны 0
         # Это гарантирует, что кнопка будет видна

@@ -7,9 +7,11 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+*.exe
 .Python
 build/
 dist/
+models/
 downloads/
 eggs/
 .eggs/

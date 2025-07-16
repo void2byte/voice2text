@@ -1,20 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
-import os
-import importlib.util
-
-vosk_spec = importlib.util.find_spec('vosk')
-if vosk_spec and vosk_spec.origin:
-    vosk_path = os.path.dirname(vosk_spec.origin)
-else:
-    raise RuntimeError('Could not find vosk module path')
-
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[(vosk_path, 'vosk'), ('assets', 'assets')],
+    datas=[('model', 'model'), ('venv\\Lib\\site-packages\\vosk', 'vosk')],
     hiddenimports=['vosk'],
     hookspath=[],
     hooksconfig={},
