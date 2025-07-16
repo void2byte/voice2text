@@ -11,6 +11,7 @@ user32 = ctypes.windll.user32
 IsWindowVisible = user32.IsWindowVisible
 IsIconic = user32.IsIconic
 GetForegroundWindow = user32.GetForegroundWindow
+IsWindow = user32.IsWindow
 
 class BinderWidget(QPushButton):
     start_recognition = Signal(str)
@@ -92,17 +93,18 @@ class BinderWidget(QPushButton):
 
     def check_window_state(self):
         """Проверяет состояние привязанного окна и обновляет видимость виджета."""
-        if not self.window_handle or not IsWindowVisible(self.window_handle):
-            self.hide_and_stop_rec()
+        if self.is_recording:
             return
 
-        if IsIconic(self.window_handle):
-            self.hide_and_stop_rec()
+        # Скрываем, если окно-цель было закрыто
+        if not self.window_handle or not IsWindow(self.window_handle):
+            self.hide()
             return
 
         foreground_window = GetForegroundWindow()
-        if self.window_handle != foreground_window and self.winId() != foreground_window:
-            self.hide_and_stop_rec()
+        # Скрываем, если ни окно-цель, ни сама кнопка не в фокусе.
+        if foreground_window != self.window_handle and foreground_window != self.winId():
+            self.hide()
         else:
             self.setVisible(True)
 

@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 *.exe
 .Python
+release/
 build/
 dist/
 models/
