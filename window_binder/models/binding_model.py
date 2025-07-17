@@ -20,6 +20,16 @@ class IdentificationMethod(Enum):
 
 
 @dataclass
+class SelectedWindowData:
+    """Структура для передачи данных о выбранном окне."""
+    identifier: 'WindowIdentifier'
+    x: int
+    y: int
+    pos_x: int = 0
+    pos_y: int = 0
+
+
+@dataclass
 class WindowIdentifier:
     """Идентификатор окна с различными методами распознавания"""
     
@@ -30,7 +40,7 @@ class WindowIdentifier:
     window_class: Optional[str] = None
     
     # Настройки идентификации
-    identification_methods: List[IdentificationMethod] = field(default_factory=list)
+    identification_methods: List[IdentificationMethod] = field(default_factory=lambda: [IdentificationMethod.EXECUTABLE_NAME, IdentificationMethod.TITLE_EXACT])
     
     # Дополнительные параметры
     case_sensitive: bool = False
@@ -68,7 +78,7 @@ class WindowIdentifier:
             window_class=data.get('window_class'),
             identification_methods=[
                 IdentificationMethod(method) 
-                for method in data.get('identification_methods', ['title_exact'])
+                for method in data.get('identification_methods', [IdentificationMethod.EXECUTABLE_NAME.value, IdentificationMethod.TITLE_EXACT.value])
             ],
             case_sensitive=data.get('case_sensitive', False),
             use_regex=data.get('use_regex', False)

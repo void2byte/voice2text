@@ -95,21 +95,21 @@ class BindingManagementDialog(QDialog):
             self.bindings_list.addItem(item)
             return
             
-        for binding_id, binding_data in bindings.items():
-            app_name = binding_data.get('app_name', 'Неизвестно')
-            x = binding_data.get('x', 0)
-            y = binding_data.get('y', 0)
-            pos_x = binding_data.get('pos_x', 0)
-            pos_y = binding_data.get('pos_y', 0)
+        for binding in bindings:
+            app_name = binding.window_identifier.title
+            x = binding.x
+            y = binding.y
+            pos_x = binding.pos_x
+            pos_y = binding.pos_y
             
             # Создаем текст для отображения
             display_text = f"{app_name} | Клик: ({x}, {y}) | Позиция: ({pos_x}, {pos_y})"
             
             item = QListWidgetItem(display_text)
-            item.setData(Qt.ItemDataRole.UserRole, binding_id)  # Сохраняем ID привязки
+            item.setData(Qt.ItemDataRole.UserRole, binding.id)  # Сохраняем ID привязки
             self.bindings_list.addItem(item)
             
-            self.logger.debug(f"BindingManagementDialog: [BINDING_ITEM] Added to UI - ID: {binding_id}, App: '{app_name}', Display: '{display_text}'")
+            self.logger.debug(f"BindingManagementDialog: [BINDING_ITEM] Added to UI - ID: {binding.id}, App: '{app_name}', Display: '{display_text}'")
             
         self.logger.info(f"BindingManagementDialog: [LOAD_BINDINGS] Successfully loaded {len(bindings)} bindings to UI")
         
@@ -158,8 +158,8 @@ class BindingManagementDialog(QDialog):
             return
             
         # Получаем информацию о привязке для подтверждения
-        binding_info = self.binder_manager.get_binding_info(binding_id)
-        app_name = binding_info.get('app_name', 'Неизвестно')
+        binding = self.binder_manager.get_binding_by_id(binding_id)
+        app_name = binding.window_identifier.title if binding else 'Неизвестно'
         
         # Запрашиваем подтверждение
         reply = QMessageBox.question(

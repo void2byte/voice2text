@@ -66,7 +66,9 @@ class ExecutablePathStrategy(IdentificationStrategy):
             return True
         win32gui.EnumWindows(enum_callback, None)
         if matching_titles:
-            return gw.getWindowsWithTitle(matching_titles[0])[0] if gw.getWindowsWithTitle(matching_titles[0]) else None
+            windows = [win for title in matching_titles for win in gw.getWindowsWithTitle(title) if win]
+            if windows:
+                return max(windows, key=lambda w: w.width * w.height)
         return None
 
 class ExecutableNameStrategy(IdentificationStrategy):
@@ -89,7 +91,9 @@ class ExecutableNameStrategy(IdentificationStrategy):
             return True
         win32gui.EnumWindows(enum_callback, None)
         if matching_titles:
-            return gw.getWindowsWithTitle(matching_titles[0])[0] if gw.getWindowsWithTitle(matching_titles[0]) else None
+            windows = [win for title in matching_titles for win in gw.getWindowsWithTitle(title) if win]
+            if windows:
+                return max(windows, key=lambda w: w.width * w.height)
         return None
 
 class WindowClassStrategy(IdentificationStrategy):
@@ -107,5 +111,7 @@ class WindowClassStrategy(IdentificationStrategy):
             return True
         win32gui.EnumWindows(enum_callback, None)
         if matching_titles:
-            return gw.getWindowsWithTitle(matching_titles[0])[0] if gw.getWindowsWithTitle(matching_titles[0]) else None
+            windows = [win for title in matching_titles for win in gw.getWindowsWithTitle(title) if win]
+            if windows:
+                return max(windows, key=lambda w: w.width * w.height)
         return None

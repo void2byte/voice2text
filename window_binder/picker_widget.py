@@ -7,11 +7,11 @@ from typing import Optional, Dict, Any
 from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
-from window_binder.models.binding_model import IdentificationMethod, WindowIdentifier
+from window_binder.models.binding_model import IdentificationMethod, WindowIdentifier, SelectedWindowData
 from window_binder.highlight_window import HighlightWindow
 
 class PickerWidget(QLabel):
-    window_selected = Signal(WindowIdentifier, int, int)
+    window_selected = Signal(SelectedWindowData)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -49,7 +49,8 @@ class PickerWidget(QLabel):
                 identifier = self._create_window_identifier(window_info)
                 if identifier:
                     logging.info(f"PickerWidget: Selected window with identifier '{identifier.get_display_name()}' at ({screen_pos.x()}, {screen_pos.y()})")
-                    self.window_selected.emit(identifier, screen_pos.x(), screen_pos.y())
+                    selected_data = SelectedWindowData(identifier=identifier, x=screen_pos.x(), y=screen_pos.y())
+                    self.window_selected.emit(selected_data)
                 else:
                     logging.warning(f"PickerWidget: Could not create window identifier for hwnd {hwnd}")
             event.accept()
@@ -105,10 +106,11 @@ class PickerWidget(QLabel):
             except Exception as e:
                 logging.warning(f"Could not get window class for hwnd {hwnd}: {e}")
             
+            logging.info(f"PickerWidget: получен список информации об окне: {window_info}")
             return window_info
             
         except Exception as e:
-            logging.error(f"Error getting window info for hwnd {hwnd}: {e}")
+            logging.error(f"PickerWidget: Error getting window info for hwnd {hwnd}: {e}")
             return None
     
     def _get_window_title(self, hwnd) -> Optional[str]:

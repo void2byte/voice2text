@@ -4,9 +4,8 @@ from typing import Dict, Optional, Callable
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
 from window_binder.binder_widget import BinderWidget
-from window_binder.error_handlers import ErrorHandler, WindowOperationError, with_error_handling
 from window_binder.utils.window_identifier import window_identification_service
-from window_binder.models.binding_model import IdentificationMethod, WindowIdentifier
+from window_binder.models.binding_model import IdentificationMethod, WindowIdentifier, SelectedWindowData
 
 
 class WidgetManager(QObject):
@@ -17,7 +16,6 @@ class WidgetManager(QObject):
         super().__init__()
         self.binders: Dict[str, BinderWidget] = {}
         self.logger = logging.getLogger(__name__)
-        self.error_handler = ErrorHandler()
         self._start_recognition_callback: Optional[Callable] = None
         self._stop_recognition_callback: Optional[Callable] = None
         self._binder_moved_callback: Optional[Callable] = None
@@ -46,29 +44,24 @@ class WidgetManager(QObject):
         """Получить количество виджетов"""
         return len(self.binders)
     
-    @with_error_handling(context="WidgetManager.create_binder")
-    def create_binder(self, binding_id: str, app_name: str, x: int, y: int, pos_x: int, pos_y: int) -> Optional[BinderWidget]:
+    def create_binder(self, binding_id: str, data: SelectedWindowData) -> Optional[BinderWidget]:
         """Создать виджет привязки"""
-        self.logger.info(f"WidgetManager: [BINDING_DATA] Creating binder - ID: {binding_id}, App: '{app_name}', Window coords: ({x}, {y}), Relative pos: ({pos_x}, {pos_y})")
-        
+        self.logger.info(f"WidgetManager: [BINDING_DATA] Creating binder - ID: {binding_id}, Data: {data}")
+
         try:
-            # Используем улучшенную логику поиска окон с поддержкой частичного совпадения
-            self.logger.debug(f"WidgetManager: [WINDOW_SEARCH] Searching for window with title: '{app_name}'")
-            win = window_identification_service.find_window(WindowIdentifier(title=app_name, identification_methods=[IdentificationMethod.TITLE_PARTIAL]))
+            self.logger.debug(f"WidgetManager: [WINDOW_SEARCH] Searching for window with identifier: '{data.identifier}'")
+            win = window_identification_service.find_window(data.identifier)
             if not win:
-                self.logger.warning(f"WidgetManager: [WINDOW_SEARCH] Window not found for title: '{app_name}'")
-                self.error_handler.handle_window_not_found(app_name)
-                raise WindowOperationError(f"Window '{app_name}' not found")
-            
+                self.logger.warning(f"WidgetManager: [WINDOW_SEARCH] Window not found for identifier: '{data.identifier}'")
+                QMessageBox.warning(None, "Ошибка", f"Окно приложения '{data.identifier.get_display_name()}' не найдено.")
+                return None
+
             win.activate()
-            self.logger.info(f"WidgetManager: [WINDOW_FOUND] Found and activated window - Title: '{win.title}' (searched: '{app_name}'), Position: ({win.left}, {win.top}), Size: ({win.width}, {win.height})")
-            
-        except WindowOperationError:
-            # Ошибка уже обработана в error_handler
-            return None
+            self.logger.info(f"WidgetManager: [WINDOW_FOUND] Found and activated window - Title: '{win.title}', Position: ({win.left}, {win.top}), Size: ({win.width}, {win.height})")
+
         except Exception as e:
-            self.logger.error(f"WidgetManager: [WINDOW_ERROR] Unexpected error during window search: {e}")
-            self.error_handler.handle_widget_creation_error(binding_id, e)
+            self.logger.error(f"WidgetManager: [WINDOW_ERROR] Unexpected error during window search for '{data.identifier.get_display_name()}': {e}")
+            QMessageBox.critical(None, "Критическая ошибка", f"Произошла непредвиденная ошибка при создании виджета для '{data.identifier.get_display_name()}'.\n{e}")
             return None
         
         # Создаем виджет
@@ -79,12 +72,12 @@ class WidgetManager(QObject):
         
         # Устанавливаем значения по умолчанию для позиции, если они равны 0
         # Это гарантирует, что кнопка будет видна
-        default_pos_x = 50 if pos_x == 0 else pos_x
-        default_pos_y = 50 if pos_y == 0 else pos_y
+        default_pos_x = 50 if data.pos_x == 0 else data.pos_x
+        default_pos_y = 50 if data.pos_y == 0 else data.pos_y
         
         # Логируем если использовались значения по умолчанию
-        if pos_x == 0 or pos_y == 0:
-            self.logger.warning(f"WidgetManager: [POSITION_DEFAULT] Using default position values - Original: ({pos_x}, {pos_y}) -> Default: ({default_pos_x}, {default_pos_y})")
+        if data.pos_x == 0 or data.pos_y == 0:
+            self.logger.warning(f"WidgetManager: [POSITION_DEFAULT] Using default position values - Original: ({data.pos_x}, {data.pos_y}) -> Default: ({default_pos_x}, {default_pos_y})")
         
         # Вычисляем абсолютные координаты
         absolute_x = win.left + default_pos_x

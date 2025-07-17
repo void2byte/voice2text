@@ -22,7 +22,7 @@ Window Binder позволяет создавать виджеты, привяз
 - **storage/BindingStorage** - управление сохранением и загрузкой привязок
 - **managers/WidgetManager** - управление виджетами привязок
 - **validators** - валидация данных привязок
-- **error_handlers** - централизованная обработка ошибок
+
 - **config** - конфигурация модуля
 - **utils** - утилиты для работы с окнами и файлами
 
@@ -81,7 +81,7 @@ window_binder/
 ├── README.md
 ├── config.py                 # Конфигурация модуля
 ├── validators.py             # Валидация данных
-├── error_handlers.py         # Обработка ошибок
+
 ├── utils.py                  # Утилиты
 ├── binder_manager.py         # Главный менеджер
 ├── settings_dialog.py        # Диалог настроек
@@ -166,7 +166,7 @@ class CustomValidator(BindingValidator):
 ### Добавление новых обработчиков ошибок
 
 ```python
-from window_binder.error_handlers import ErrorHandler
+
 
 class CustomErrorHandler(ErrorHandler):
     def handle_custom_error(self, error):

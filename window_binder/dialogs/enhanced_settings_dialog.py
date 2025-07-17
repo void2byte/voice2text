@@ -8,10 +8,10 @@ from PySide6.QtWidgets import (
     QComboBox, QMessageBox, QCheckBox, QGroupBox, QGridLayout, QTabWidget,
     QWidget, QTextEdit, QSpinBox, QFormLayout, QRadioButton, QButtonGroup
 )
-from PySide6.QtCore import Signal, QEvent
+from PySide6.QtCore import Signal
 from window_binder.picker_widget import PickerWidget
 from window_binder.validators import BindingValidator
-from window_binder.models.binding_model import WindowBinding, WindowIdentifier, IdentificationMethod
+from window_binder.models.binding_model import WindowBinding, WindowIdentifier, IdentificationMethod, SelectedWindowData
 from window_binder.utils.window_identifier import window_identification_service
 from window_binder.config import config
 
@@ -19,7 +19,7 @@ from window_binder.config import config
 class EnhancedSettingsDialog(QDialog):
     """Расширенный диалог настроек привязок"""
     
-    result_ready = Signal(dict)
+    result_ready = Signal(WindowBinding)
     
     def __init__(self, parent=None, existing_binding: Optional[WindowBinding] = None):
         super().__init__(parent)
@@ -325,6 +325,12 @@ class EnhancedSettingsDialog(QDialog):
     def on_window_selected_combo(self, index):
         """Обработчик выбора окна из комбо-бокса"""
         self.update_window_info()
+        
+        # Автоматически выбираем рекомендуемые методы
+        if IdentificationMethod.EXECUTABLE_NAME in self.id_method_checkboxes:
+            self.id_method_checkboxes[IdentificationMethod.EXECUTABLE_NAME].setChecked(True)
+        if IdentificationMethod.TITLE_EXACT in self.id_method_checkboxes:
+            self.id_method_checkboxes[IdentificationMethod.TITLE_EXACT].setChecked(True)
     
     def on_tab_changed(self, index):
         """Обработчик переключения вкладок"""
@@ -334,15 +340,14 @@ class EnhancedSettingsDialog(QDialog):
     
 
     
-    def on_window_selected_picker(self, *args):
+    def on_window_selected_picker(self, data: SelectedWindowData):
         """Обработчик выбора окна из PickerWidget"""
-        self.logger.info(f"Picker Aргументы: {args}")
-        if not args or len(args) < 3:
-            self.logger.error(f"Получено неверное количество аргументов: {len(args)}")
-            return
-
-        identifier, x, y = args[:3]
+        self.logger.info(f"Picker выбрал: {data}")
         
+        identifier = data.identifier
+        x = data.x
+        y = data.y
+
         if not isinstance(identifier, WindowIdentifier):
             self.logger.error(f"Неверный тип идентификатора: {type(identifier)}")
             return
@@ -370,6 +375,12 @@ class EnhancedSettingsDialog(QDialog):
         
         self.window_info_text.setPlainText(info_text)
         self.logger.info(f"Получена дополнительная информация о окне: {info_text}")
+
+        # Автоматически выбираем рекомендуемые методы
+        if IdentificationMethod.EXECUTABLE_NAME in self.id_method_checkboxes:
+            self.id_method_checkboxes[IdentificationMethod.EXECUTABLE_NAME].setChecked(True)
+        if IdentificationMethod.TITLE_EXACT in self.id_method_checkboxes:
+            self.id_method_checkboxes[IdentificationMethod.TITLE_EXACT].setChecked(True)
 
     
     def update_window_info(self):
@@ -441,12 +452,12 @@ class EnhancedSettingsDialog(QDialog):
     
     def create_window_binding(self) -> Optional[WindowBinding]:
         """Создать привязку окна из текущих настроек"""
-        identifier = self.create_window_identifier()
-        if not identifier:
+        window_identifier = self.create_window_identifier()
+        if not window_identifier:
             return None
         
         binding = WindowBinding(
-            window_identifier=identifier,
+            window_identifier=window_identifier,
             x=self.x_coord_input.value(),
             y=self.y_coord_input.value(),
             pos_x=self.pos_x_input.value(),
@@ -539,37 +550,23 @@ class EnhancedSettingsDialog(QDialog):
         
         # Сохраняем данные для передачи
         self.validated_binding = binding
-        
-        # Преобразуем в формат для BinderManager
-        result_data = {
-            'app_name': binding.window_identifier.title,
-            'x': binding.x,
-            'y': binding.y,
-            'pos_x': binding.pos_x,
-            'pos_y': binding.pos_y
-        }
-        
-        if binding.id:
-            result_data['id'] = binding.id
-        
-        # Сохраняем расширенные данные для внутреннего использования
-        result_data['_enhanced_binding'] = binding
-        
-        self.logger.info(f"EnhancedSettingsDialog: [RESULT_DATA] Sending result - App: '{result_data['app_name']}', Window coords: ({result_data['x']}, {result_data['y']}), Widget position: ({result_data['pos_x']}, {result_data['pos_y']}), ID: {result_data.get('id')}")
-        
+
+        self.logger.info(f"EnhancedSettingsDialog: [RESULT_DATA] Sending result - Binding ID: {binding.id}")
+        self.logger.debug(f"EnhancedSettingsDialog: [FULL_BINDING_DATA] {binding.to_dict()}")
+
         # Показываем уведомление
         action = "обновлена" if self.existing_binding else "создана"
         QMessageBox.information(
-            self, "Успех", 
+            self, "Успех",
             f"Привязка для '{binding.get_display_name()}' успешно {action}"
         )
-        
+
         # Сохраняем настройки диалога
         self.save_dialog_settings()
-        
+
         # Отправляем результат в BinderManager
-        self.result_ready.emit(result_data)
-        
+        self.result_ready.emit(binding)
+
         self.accept()
     
     def load_dialog_settings(self):

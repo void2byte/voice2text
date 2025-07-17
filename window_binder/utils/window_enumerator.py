@@ -74,7 +74,8 @@ class WindowEnumerator:
     def _get_windows_extended(self, detection_mode: int) -> List[Dict[str, Any]]:
         """Получить окна расширенным способом через win32gui с улучшенной обработкой."""
         windows_details = []
-        
+        process_cache = {}
+
         def enum_windows_callback(hwnd, windows_list):
             try:
                 title = win32gui.GetWindowText(hwnd)
@@ -126,7 +127,11 @@ class WindowEnumerator:
                 try:
                     _, pid = win32process.GetWindowThreadProcessId(hwnd)
                     details['process_id'] = pid
-                    process = psutil.Process(pid)
+                    if pid in process_cache:
+                        process = process_cache[pid]
+                    else:
+                        process = psutil.Process(pid)
+                        process_cache[pid] = process
                     exe_path = process.exe()
                     details['executable_path'] = exe_path
                     details['executable_name'] = os.path.basename(exe_path)

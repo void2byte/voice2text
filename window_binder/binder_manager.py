@@ -4,12 +4,13 @@ import pyautogui
 import pyperclip
 import pygetwindow as gw
 from PySide6.QtCore import QObject
+from typing import Optional
 from window_commander.core.window_manager import WindowManager
 from PySide6.QtWidgets import QApplication, QMessageBox, QDialog
 from window_binder.dialogs.enhanced_settings_dialog import EnhancedSettingsDialog
 from window_binder.storage.binding_storage import BindingStorage
 from window_binder.managers.widget_manager import WidgetManager
-from window_binder.models.binding_model import WindowBinding, WindowIdentifier
+from window_binder.models.binding_model import WindowBinding, WindowIdentifier, SelectedWindowData, IdentificationMethod
 from window_binder.utils.window_identifier import window_identification_service
 
 BINDINGS_FILE = os.path.join("settings", "bindings.json")
@@ -43,10 +44,6 @@ class BinderManager(QObject):
 
 
 
-    def create_binder(self, binding_id, app_name, x, y, pos_x, pos_y):
-        """Создать виджет привязки"""
-        return self.widget_manager.create_binder(binding_id, app_name, x, y, pos_x, pos_y)
-
     def stop_recognition(self, binding_id):
         """Остановить распознавание для конкретной привязки."""
         self.logger.info(f"Stopping recognition for specific binding: {binding_id}")
@@ -74,13 +71,16 @@ class BinderManager(QObject):
         # Случай 1: Распознавание было вызвано для конкретной привязки
         if self.specific_binding_target:
             binding = self.specific_binding_target
-            x, y = binding['x'], binding['y']
-            self.logger.info(f"Pasting to specific binder target at ({x}, {y})")
-            target_window = gw.getWindowsWithTitle(binding['app_name'])
+            x, y = binding.x, binding.y
+            app_name = binding.window_identifier.title
+            self.logger.info(f"Pasting to specific binder target at ({x}, {y}) for app '{app_name}'")
+
+            target_window = window_identification_service.find_window(binding.window_identifier)
+
             if target_window:
-                hwnd = target_window[0]._hWnd
+                hwnd = target_window._hWnd
                 self.window_manager.set_window_info({'hwnd': hwnd})
-                self.logger.info(f"Attempting to click at ({x}, {y}) in window {binding['app_name']}")
+                self.logger.info(f"Attempting to click at ({x}, {y}) in window {app_name}")
                 # Сначала кликаем по координатам
                 if self.window_manager.click_at_position(x, y, with_focus=True):
                     self.logger.info(f"Click successful. Pasting text.")
@@ -88,9 +88,9 @@ class BinderManager(QObject):
                     self.window_manager.send_text(text, with_focus=False)
                     self.logger.info(f"Text pasted successfully to specific target after click.")
                 else:
-                    self.logger.error(f"Failed to click at position for window {binding['app_name']}")
+                    self.logger.error(f"Failed to click at position for window {app_name}")
             else:
-                self.logger.error(f"Could not find window for app: {binding['app_name']}")
+                self.logger.error(f"Could not find window for app: {app_name}")
             self.specific_binding_target = None  # Сбрасываем цель
             return
 
@@ -114,16 +114,15 @@ class BinderManager(QObject):
             return
         
         try:
-            app_name = self.bindings[binding_id]['app_name']
+            binding = self.bindings[binding_id]
+            app_name = binding.window_identifier.title
             self.logger.debug(f"BinderManager: [MOVE_CALC] Calculating relative position for app '{app_name}'")
-            
-            windows = gw.getWindowsWithTitle(app_name)
-            
-            if not windows:
+
+            win = window_identification_service.find_window(binding.window_identifier)
+
+            if not win:
                 self.logger.warning(f"BinderManager: [MOVE_ERROR] Window '{app_name}' not found for position update")
                 return
-            
-            win = windows[0]
             relative_x = pos_x - win.left
             relative_y = pos_y - win.top
             
@@ -143,12 +142,12 @@ class BinderManager(QObject):
         
         try:
             # Получаем информацию о привязке для подтверждения
-            binding_info = self.get_binding_info(binding_id)
-            if not binding_info:
+            binding = self.get_binding_by_id(binding_id)
+            if not binding:
                 self.logger.warning(f"BinderManager: Binding {binding_id} not found for deletion")
                 return
                 
-            app_name = binding_info.get('app_name', 'Неизвестно')
+            app_name = binding.window_identifier.title
             
             # Запрашиваем подтверждение
             reply = QMessageBox.question(
@@ -172,13 +171,20 @@ class BinderManager(QObject):
             self.logger.error(f"BinderManager: Error handling delete request for {binding_id}: {e}")
             QMessageBox.critical(None, "Ошибка", f"Произошла ошибка при удалении: {e}")
 
-    def add_binding(self, app_name, x, y, pos_x, pos_y):
-        """Добавить новую привязку"""
-        self.logger.info(f"BinderManager: [ADD_BINDING] Adding new binding - App: '{app_name}', Window: ({x}, {y}), Position: ({pos_x}, {pos_y})")
-        binding_id = self.storage.add_binding(self.bindings, app_name, x, y, pos_x, pos_y)
-        self.logger.info(f"BinderManager: [ADD_BINDING] Created binding with ID: {binding_id}")
-        self.save_bindings()
-        return binding_id
+    def add_binding(self, new_binding: WindowBinding):
+        """Добавить новую привязку, используя WindowBinding."""
+        self.logger.info(f"BinderManager: [ADD_BINDING] Adding new binding with data: {new_binding}")
+
+        # Добавляем привязку через storage, который теперь принимает WindowBinding
+        binding_id = self.storage.add_binding(self.bindings, new_binding)
+        if binding_id:
+            self.logger.info(f"BinderManager: [BINDING_CREATED] Successfully created binding with ID: {binding_id}")
+            self.save_bindings()
+            self.create_binder_for_binding(binding_id, self.bindings[binding_id])
+            return binding_id
+        else:
+            self.logger.error("BinderManager: [BINDING_FAILED] Failed to create binding.")
+            return None
 
     def save_bindings(self):
         """Сохранить привязки"""
@@ -194,50 +200,52 @@ class BinderManager(QObject):
         
         # Логируем детали каждой загруженной привязки
         for binding_id, binding_data in self.bindings.items():
-            app_name = binding_data.get('app_name', 'unknown')
-            x, y = binding_data.get('x', 'unknown'), binding_data.get('y', 'unknown')
-            pos_x, pos_y = binding_data.get('pos_x', 'unknown'), binding_data.get('pos_y', 'unknown')
+            app_name = binding_data.window_identifier.title
+            x, y = binding_data.x, binding_data.y
+            pos_x, pos_y = binding_data.pos_x, binding_data.pos_y
             self.logger.debug(f"BinderManager: [LOADED_BINDING] ID: {binding_id}, App: '{app_name}', Window: ({x}, {y}), Position: ({pos_x}, {pos_y})")
         
         # Создаем виджеты для всех загруженных привязок
         for binding_id, binding_data in self.bindings.items():
             self.create_binder_for_binding(binding_id, binding_data)
 
-    def create_binder_for_binding(self, binding_id, binding_data):
-        """Создать виджет для существующей привязки с поддержкой расширенной идентификации"""
-        app_name = binding_data['app_name']
-        x = binding_data.get('x', 0)
-        y = binding_data.get('y', 0)
-        pos_x = binding_data.get('pos_x', 50)
-        pos_y = binding_data.get('pos_y', 50)
-        
+    def create_binder_for_binding(self, binding_id, binding_data: WindowBinding):
+        """Создать виджет для существующей привязки."""
+        # Данные теперь берутся напрямую из объекта WindowBinding
+        app_name = binding_data.window_identifier.title
+        x = binding_data.x
+        y = binding_data.y
+        pos_x = binding_data.pos_x
+        pos_y = binding_data.pos_y
+
         self.logger.info(f"BinderManager: [LOAD_BINDING] Loading binding {binding_id} - App: '{app_name}', Data: x={x}, y={y}, pos_x={pos_x}, pos_y={pos_y}")
-        self.logger.debug(f"BinderManager: [BINDING_FULL_DATA] Full binding data for {binding_id}: {binding_data}")
-        
-        # Проверяем наличие расширенных данных
-        enhanced_binding_data = binding_data.get('_enhanced_binding')
-        if enhanced_binding_data:
-            try:
-                # Восстанавливаем объект WindowBinding из словаря
-                from window_binder.models.binding_model import WindowBinding
-                enhanced_binding = WindowBinding.from_dict(enhanced_binding_data)
-                # Используем расширенную идентификацию для поиска окна
-                window = window_identification_service.find_window(enhanced_binding.window_identifier)
-                if window:
-                    self.logger.info(f"BinderManager: Found window using enhanced identification: {window.title}")
-                    # Обновляем app_name если окно найдено с другим заголовком
-                    if window.title != app_name:
-                        self.logger.info(f"BinderManager: Updating app_name from '{app_name}' to '{window.title}'")
-                        app_name = window.title
-                        # Обновляем данные в хранилище
-                        self.bindings[binding_id]['app_name'] = app_name
-                        self.save_bindings()
-                else:
-                    self.logger.warning(f"BinderManager: Enhanced identification failed for binding {binding_id}, using fallback")
-            except Exception as e:
-                self.logger.error(f"BinderManager: Error processing enhanced binding data: {e}")
-        
-        widget = self.widget_manager.create_binder(binding_id, app_name, x, y, pos_x, pos_y)
+        self.logger.debug(f"BinderManager: [BINDING_FULL_DATA] Full binding data for {binding_id}: {binding_data.to_dict()}")
+
+        # Используем расширенную идентификацию для поиска окна
+        window = window_identification_service.find_window(binding_data.window_identifier)
+        if window:
+            self.logger.info(f"BinderManager: Found window using enhanced identification: {window.title}")
+            # Обновляем app_name, если заголовок окна изменился
+            if window.title != app_name:
+                self.logger.info(f"BinderManager: Updating app_name from '{app_name}' to '{window.title}'")
+                app_name = window.title
+                # Обновляем данные в самом объекте привязки и сохраняем
+                binding_data.window_identifier.title = app_name
+                self.save_bindings()
+        else:
+            self.logger.warning(f"BinderManager: Window identification failed for binding {binding_id}, widget may not appear correctly.")
+
+        # Создаем SelectedWindowData для передачи в widget_manager
+        # Используем идентификатор из объекта binding_data
+        data = SelectedWindowData(
+            identifier=binding_data.window_identifier,
+            x=x,
+            y=y,
+            pos_x=pos_x,
+            pos_y=pos_y
+        )
+
+        widget = self.widget_manager.create_binder(binding_id, data)
         if not widget:
             self.logger.warning(f"BinderManager: Failed to create widget for binding {binding_id} ('{app_name}')")
     
@@ -301,84 +309,35 @@ class BinderManager(QObject):
         
         self.logger.info("BinderManager: Binding management dialog closed")
     
-    def _handle_settings_result(self, result_data: dict):
-        """Обработать результат диалога настроек"""
-        self.logger.info("BinderManager: [SIGNAL_RECEIVED] Received result_ready signal from EnhancedSettingsDialog")
+    def _handle_settings_result(self, binding: WindowBinding):
+        """Обработать результат из диалога настроек (принимает WindowBinding)"""
+        self.logger.info(f"BinderManager: [SIGNAL_RECEIVED] Received result_ready signal with WindowBinding: {binding.id}")
+        self.logger.debug(f"BinderManager: [RESULT_DATA] Received binding data: {binding.to_dict()}")
+
         try:
-            # Получаем данные
-            app_name = result_data['app_name']
-            x = result_data['x']
-            y = result_data['y']
-            pos_x = result_data.get('pos_x', 50)
-            pos_y = result_data.get('pos_y', 50)
-            binding_id = result_data.get('id')
-            
-            # Проверяем, есть ли расширенная привязка
-            enhanced_binding = result_data.get('_enhanced_binding')
-            
-            self.logger.info(f"BinderManager: [SETTINGS_RESULT] Processing binding - App: '{app_name}', Window coords: ({x}, {y}), Widget position: ({pos_x}, {pos_y}), ID: {binding_id}")
-            self.logger.debug(f"BinderManager: [SETTINGS_FULL_DATA] Complete result data: {result_data}")
-            
-            if enhanced_binding:
-                self.logger.info(f"BinderManager: [ENHANCED_BINDING] Enhanced binding data present for advanced window identification")
-            
-            if binding_id and binding_id in self.bindings:  # Обновление существующей привязки
-                self.logger.info(f"BinderManager: [UPDATE_EXISTING] Updating existing binding {binding_id}")
-                if self.update_binding(binding_id, app_name=app_name, x=x, y=y, pos_x=pos_x, pos_y=pos_y):
-                    # Сохраняем расширенные данные если есть
-                    if enhanced_binding:
-                        self._save_enhanced_binding(binding_id, enhanced_binding)
-                    
-                    # Обновляем виджет
-                    self.widget_manager.update_widget_position(binding_id, pos_x, pos_y)
-                    self.logger.info(f"BinderManager: Successfully updated binding {binding_id}")
+            is_update = binding.id and binding.id in self.bindings
+
+            if is_update:
+                # Обновляем существующую привязку
+                self.logger.info(f"BinderManager: [UPDATE_BINDING] Updating existing binding - ID: {binding.id}")
+                
+                # update_binding принимает **kwargs, поэтому мы распаковываем словарь
+                if self.update_binding(binding.id, **binding.to_dict()):
+                    # Обновляем позицию виджета
+                    self.widget_manager.update_widget_position(binding.id, binding.pos_x, binding.pos_y)
+                    self.logger.info(f"BinderManager: Successfully updated binding {binding.id}")
                 else:
-                    self.logger.error(f"BinderManager: Failed to update binding {binding_id}")
-            else:  # Создание новой привязки (включая случай когда ID есть, но привязки нет)
-                if binding_id:
-                    self.logger.info(f"BinderManager: [CREATE_WITH_ID] Creating new binding with provided ID {binding_id}")
-                    # Создаем привязку с предоставленным ID
-                    binding_data = {
-                        "app_name": app_name,
-                        "x": x,
-                        "y": y,
-                        "pos_x": pos_x,
-                        "pos_y": pos_y
-                    }
-                    
-                    self.bindings[binding_id] = binding_data
-                    self.logger.info(f"BinderManager: [CREATE_WITH_ID] Created binding data for ID {binding_id}")
-                    
-                    # Сохраняем расширенные данные если есть
-                    if enhanced_binding:
-                        self._save_enhanced_binding(binding_id, enhanced_binding)
-                    
-                    # Сохраняем в файл
-                    self.save_bindings()
-                    
-                    # Создаем виджет
-                    widget = self.create_binder(binding_id, app_name, x, y, pos_x, pos_y)
-                    if widget:
-                        self.logger.info(f"BinderManager: Successfully created binding {binding_id} with provided ID")
-                    else:
-                        self.logger.error(f"BinderManager: Failed to create widget for binding {binding_id}")
+                    self.logger.error(f"BinderManager: Failed to update binding {binding.id}")
+            else:
+                # Добавляем новую привязку
+                self.logger.info("BinderManager: [ADD_NEW_BINDING] Adding new binding from WindowBinding object")
+                
+                new_binding_id = self.add_binding(binding)
+                if new_binding_id:
+                    self.logger.info(f"BinderManager: Successfully created binding {new_binding_id}")
                 else:
-                    self.logger.info(f"BinderManager: [CREATE_NEW] Creating new binding with auto-generated ID")
-                    binding_id = self.add_binding(app_name, x, y, pos_x, pos_y)
-                    if binding_id:
-                        # Сохраняем расширенные данные если есть
-                        if enhanced_binding:
-                            self._save_enhanced_binding(binding_id, enhanced_binding)
-                        
-                        # Создаем виджет
-                        widget = self.create_binder(binding_id, app_name, x, y, pos_x, pos_y)
-                        if widget:
-                            self.logger.info(f"BinderManager: Successfully created binding {binding_id}")
-                        else:
-                            self.logger.error(f"BinderManager: Failed to create widget for binding {binding_id}")
-                    else:
-                        self.logger.error(f"BinderManager: Failed to create binding for '{app_name}'")
-                    
+                    self.logger.error(f"BinderManager: Failed to create binding for '{binding.window_identifier.title}'")
+
         except Exception as e:
             self.logger.error(f"BinderManager: Error processing settings result: {e}")
             QMessageBox.warning(None, "Ошибка", f"Произошла ошибка при обработке настроек: {e}")
@@ -430,22 +389,23 @@ class BinderManager(QObject):
         self.logger.error(f"BinderManager: [UPDATE_BINDING] Failed to update binding {binding_id}")
         return False
     
-    def get_binding_info(self, binding_id: str) -> dict:
-        """Получить информацию о привязке"""
-        return self.bindings.get(binding_id, {})
+    def get_binding_by_id(self, binding_id: str) -> Optional[WindowBinding]:
+        """Получить объект WindowBinding по его ID."""
+        return self.bindings.get(binding_id)
     
-    def get_all_bindings(self) -> dict:
-        """Получить все привязки"""
-        self.logger.info(f"BinderManager: [GET_ALL_BINDINGS] Returning {len(self.bindings)} bindings")
-        
-        # Логируем детали каждой привязки
+    def get_all_bindings(self) -> list[WindowBinding]:
+        """Получить все привязки в виде списка объектов WindowBinding."""
+        self.logger.info(f"BinderManager: [GET_ALL_BINDINGS] Returning {len(self.bindings)} bindings as a list of objects")
+
+        # Логируем детали каждой привязки, используя атрибуты объекта
         for binding_id, binding_data in self.bindings.items():
-            app_name = binding_data.get('app_name', 'unknown')
-            x, y = binding_data.get('x', 'unknown'), binding_data.get('y', 'unknown')
-            pos_x, pos_y = binding_data.get('pos_x', 'unknown'), binding_data.get('pos_y', 'unknown')
+            # self.bindings теперь содержит объекты WindowBinding, доступ к данным через атрибуты
+            app_name = binding_data.window_identifier.title
+            x, y = binding_data.x, binding_data.y
+            pos_x, pos_y = binding_data.pos_x, binding_data.pos_y
             self.logger.debug(f"BinderManager: [BINDING_INFO] ID: {binding_id}, App: '{app_name}', Window: ({x}, {y}), Position: ({pos_x}, {pos_y})")
-        
-        return self.bindings.copy()
+
+        return list(self.bindings.values())
     
     def cleanup(self):
         """Очистить все ресурсы"""

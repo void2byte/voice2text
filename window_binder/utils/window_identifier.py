@@ -57,22 +57,19 @@ class WindowIdentificationService:
     
     def _find_by_combined(self, identifier: WindowIdentifier) -> Optional[gw.Win32Window]:
         """Найти окно используя комбинированный подход"""
-        # Собираем все возможные методы и пробуем их
-        methods_to_try = [
-            IdentificationMethod.TITLE_EXACT,
-            IdentificationMethod.EXECUTABLE_NAME,
-            IdentificationMethod.TITLE_PARTIAL,
-            IdentificationMethod.EXECUTABLE_PATH,
-            IdentificationMethod.WINDOW_CLASS
-        ]
-        
-        for method in methods_to_try:
+        # Пробуем все доступные стратегии по очереди
+        for method, strategy in self.strategies.items():
+            # Пропускаем, если этот метод уже был в списке основных
             if method in identifier.identification_methods:
-                continue  # Избегаем повторного вызова
-
-            window = self._find_by_method(identifier, method)
-            if window:
-                return window
+                continue
+            
+            try:
+                window = strategy.find(identifier)
+                if window:
+                    self.logger.info(f"Window found using combined strategy: {method.value}")
+                    return window
+            except Exception as e:
+                self.logger.error(f"Error in combined strategy with method {method.value}: {e}")
         
         return None
     
